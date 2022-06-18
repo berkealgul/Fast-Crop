@@ -1,36 +1,53 @@
 import cv2
 
 
-class ROISelector:
+class RoiSelector:
     def __init__(self, frame):
         self.activeX = -1
         self.activeY = -1
-        self.roi_x = 1
-        self.roi_y = 1
+        self.roiX = -1
+        self.roiY = -1
+        self.roiW = -1
+        self.roiH = -1
         self.roiSelected = False
         self.frame = frame
         cv2.namedWindow('ROI Selection')  
         cv2.setMouseCallback('ROI Selection', self.roiMouseHandler)  
 
-        while self.roiSelected is False:
-            cv2.waitKey(0)
+        while True:
+            cv2.waitKey(45)
 
     def roiMouseHandler(self, event, x, y, flags, param):  
         self.activeX = x
         self.activeY = y
-
+        v0 = (self.roiX, self.roiY)
+        v1 = (self.activeX, self.activeY)
         frame_ = self.frame.copy()
 
-        v0 = (self.roi_x, self.roi_y)
-        v1 = (self.activeX, self.activeY)
-        cv2.rectangle(frame_, v0, v1, (0,255,0), 2)
+        cv2.rectangle(frame_, v0, v1, (0,255,0), 1)
         cv2.imshow('ROI Selection', frame_)
-        #cv2.waitKey(0)
 
         if(event == cv2.EVENT_LBUTTONDBLCLK):  
-            print("click")
+            self.setRoiVertex()
         elif(event == cv2.EVENT_RBUTTONDBLCLK):  
             pass
+
+    def previewRoi(self):
+        cv2.namedWindow('ROI Preview')
+        roi = self.cropFrame()
+
+    def cropFrame(self, frame):
+        return frame[self.roiY:self.roiY+self.roiH, self.roiX:self.roiX+self.roiW]  
+
+    def setRoiVertex(self):
+        if self.roiX == -1: # set upper left vertex
+            self.roiX = self.activeX
+            self.roiY = self.activeX
+        elif self.roiW == -1: # set size
+            self.roiW = self.activeX - self.roiX
+            self.roiH = self.activeY - self.roiY
+        else:
+            self.roiSelected = True
 
 
 
@@ -52,7 +69,7 @@ def main():
     n = 0
 
     ret, frame = cap.read()
-    rs = ROISelector(frame)
+    rs = RoiSelector(frame)
 
     while True:
         ret, frame = cap.read()
