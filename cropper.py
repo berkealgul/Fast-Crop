@@ -1,8 +1,8 @@
 import cv2
 
 
-class RoiSelector:
-    def __init__(self, frame):
+class RoiManager:
+    def __init__(self):
         self.activeX = -1
         self.activeY = -1
         self.roiX = -1
@@ -10,12 +10,22 @@ class RoiSelector:
         self.roiW = -1
         self.roiH = -1
         self.roiSelected = False
-        self.frame = frame
-        cv2.namedWindow('ROI Selection')  
-        cv2.setMouseCallback('ROI Selection', self.roiMouseHandler)  
+        self.frame = None
+        self.windowWaitTime = 20 # ms
 
-        while True:
-            cv2.waitKey(45)
+    def setRoi(self, frame):
+        self.frame = frame
+        while self.roiSelected is False:
+            self.selectRoi()
+            self.previewRoi()
+
+    def selectRoi(self):
+        winName = 'ROI Selection'
+        cv2.namedWindow(winName)  
+        cv2.setMouseCallback(winName, self.roiMouseHandler)  
+        while self.roiSelected is False:
+            cv2.waitKey(self.windowWaitTime)
+        cv2.destroyWindow(winName)
 
     def roiMouseHandler(self, event, x, y, flags, param):  
         self.activeX = x
@@ -29,37 +39,46 @@ class RoiSelector:
 
         if(event == cv2.EVENT_LBUTTONDBLCLK):  
             self.setRoiVertex()
-        elif(event == cv2.EVENT_RBUTTONDBLCLK):  
-            pass
+            print("set")
 
     def previewRoi(self):
-        cv2.namedWindow('ROI Preview')
-        roi = self.cropFrame()
+        winName = 'ROI Preview'
+        roi = self.crop(self.frame)
+        cv2.namedWindow(winName)
+        cv2.imshow(winName, roi)
 
-    def cropFrame(self, frame):
+        while True:
+            key = cv2.waitKey(self.windowWaitTime)
+            if key == 81 or key == 113:
+                break # accept roi
+            elif key == 69 or key == 101:
+                # reject roi and reset values
+                self.roiSelected = False 
+                self.roiX = -1
+                self.roiY = -1
+                self.roiW = -1
+                self.roiH = -1
+                break
+
+        cv2.destroyWindow(winName)
+
+    def crop(self, frame):
         return frame[self.roiY:self.roiY+self.roiH, self.roiX:self.roiX+self.roiW]  
 
     def setRoiVertex(self):
         if self.roiX == -1: # set upper left vertex
             self.roiX = self.activeX
-            self.roiY = self.activeX
+            self.roiY = self.activeY
         elif self.roiW == -1: # set size
             self.roiW = self.activeX - self.roiX
             self.roiH = self.activeY - self.roiY
-        else:
             self.roiSelected = True
+            
 
 
 
 def main():
-
-    x = 0
-    y = 0
-    w = 100
-    h = 100
-
     cap = cv2.VideoCapture("example.mp4")
-
     fps = cap.get(cv2.CAP_PROP_FPS)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     writer = cv2.VideoWriter('outpy.mp4', fourcc, fps, (w,h)) 
@@ -69,7 +88,8 @@ def main():
     n = 0
 
     ret, frame = cap.read()
-    rs = RoiSelector(frame)
+    rs = RoiManager()
+    rs.setRoi(frame)
 
     while True:
         ret, frame = cap.read()
@@ -81,7 +101,7 @@ def main():
         if ret is False:
             break
         
-        writer.write(frame[y:y+h, x:x+w])
+        writer.write(rs.crop(frame))
 
     writer.release()
     cap.release()
