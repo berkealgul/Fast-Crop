@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 WINDOW_WAIT_TIME = 20 # ms
 
@@ -79,10 +80,11 @@ class TimeLapseManager:
     def __init__(self, cap):
         self.cap = cap
         self.videoLength =  int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.videoBeginPos = -1
+        self.videoBeginPos = 0
+        self.videoEndPos = self.videoLength
         self.winName = "TimeLapseManager"
         _ , self.videoBeginFrame = cap.read()
-
+        _ , self.videoEndFrame = cap.read()
 
     def handleFrameSelectionSlider(self, value):
         # slide values are % based hence we gotta calculate the position
@@ -91,6 +93,19 @@ class TimeLapseManager:
         _, self.videoBeginFrame = self.cap.read()
         cv2.imshow(self.winName, self.videoBeginFrame)
 
+    def handleTimeLapseSliderBegin(self, value):
+        # slide values are % based hence we gotta calculate the position
+        self.videoBeginPos = int(self.videoLength * min((value/100), 1.0))
+        self.cap.set(1, self.videoBeginPos)
+        _, self.videoBeginFrame = self.cap.read()
+        self.showTimeLapseFrames()
+
+    def handleTimeLapseSliderEnd(self, value):
+        # slide values are % based hence we gotta calculate the position
+        self.videoEndPos = int(self.videoLength * min((value/100), 1.0))
+        self.cap.set(1, self.videoEndPos)
+        _, self.videoEndFrame = self.cap.read()
+        self.showTimeLapseFrames()
 
     # this function makes user selects any frame from video and returns selected frame
     def selectFrameFromVideo(self):
@@ -102,10 +117,45 @@ class TimeLapseManager:
             key = cv2.waitKey(WINDOW_WAIT_TIME)
             if key == 81 or key == 113:
                 break
-            
+
         cv2.destroyWindow(self.winName)
         return self.videoBeginFrame # return the resulting frame
-    
+
+    def selectTimeLapses(self):
+        cv2.namedWindow(self.winName)
+        cv2.createTrackbar("Vid Begin", self.winName, 0, 100, self.handleTimeLapseSliderBegin)
+        cv2.createTrackbar("Vid End", self.winName, 0, 100, self.handleTimeLapseSliderEnd)
+        self.showTimeLapseFrames()
+
+        # space to confirm lapses
+        while True: # space to complete
+            key = cv2.waitKey(WINDOW_WAIT_TIME)
+            if key == 81 or key == 113:
+                break
+        
+        if self.videoBeginPos > self.videoEndPos:
+            print("[Time Lapse Manager] Warning: video ending position is smaller than beginning position. It may cause problems")
+
+        cv2.destroyAllWindows()
+
+    # returns vide positions in the format of -> (begin, end)
+    def getTimeLapsePositions(self):
+        return self.videoBeginPos, self.videoEndPos
+
+    def showTimeLapseFrames(self):
+        vidEnd = self.resizeFrame(self.videoBeginFrame) 
+        vidBegin = self.resizeFrame(self.videoEndFrame)
+        stacked = np.hstack((vidEnd, vidBegin))
+        cv2.imshow(self.winName, stacked)
+
+    # downscales the frame by half of current resolution
+    # returns resized frame
+    def resizeFrame(self, frame):
+        width = int(frame.shape[1] * 0.5)
+        height = int(frame.shape[0] * 0.5)
+        dim = (width, height)
+        return cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
+
 
 def main():
     cap = cv2.VideoCapture("example.mp4")
@@ -118,15 +168,17 @@ def main():
     n = 0
 
     ret, frame = cap.read()
-    frame = TimeLapseManager(cap).selectFrameFromVideo()
+    #frame = TimeLapseManager(cap).selectFrameFromVideo()
     #rs = RoiManager()
     #rs.setRoi(frame)
+    tm = TimeLapseManager(cap)
+    tm.selectTimeLapses()
+    print(tm.getTimeLapsePositions())
 
     cv2.imshow("new frame", frame)
 
     # it will be changed
-    while True:
-        cv2.waitKey(100)
+    return
 
     while True:
 
