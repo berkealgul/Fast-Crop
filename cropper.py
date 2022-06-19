@@ -113,7 +113,7 @@ class TimeLapseManager:
         cv2.createTrackbar("Video Position %", self.winName, 0, 100, self.handleFrameSelectionSlider)
         self.handleFrameSelectionSlider(0)
 
-        while True: # space to complete
+        while True: # q to complete
             key = cv2.waitKey(WINDOW_WAIT_TIME)
             if key == 81 or key == 113:
                 break
@@ -128,7 +128,7 @@ class TimeLapseManager:
         self.showTimeLapseFrames()
 
         # space to confirm lapses
-        while True: # space to complete
+        while True: # q to complete
             key = cv2.waitKey(WINDOW_WAIT_TIME)
             if key == 81 or key == 113:
                 break
