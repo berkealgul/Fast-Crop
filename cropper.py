@@ -259,11 +259,10 @@ def main():
     for i in range(start, end):
         ret, frame = cap.read()
 
-        # NOT WORKING BRUH
-        #per = (i/length)*100
+        per = (i/length)*100
         # print percentage in each 10% per because printing is costy
-        #if(per % 10 == 0):
-        #    print("Video Processing ", per, "%")
+        if(per % 10 == 0):
+            print("Video Processing ", per, "%")
 
         if ret is False:
             break
