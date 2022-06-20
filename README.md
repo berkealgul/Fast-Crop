@@ -32,3 +32,4 @@ After that you can follow command line instructions of the program
 - If you dont give -fs argument the first frame of the video is going to be used as reference frame for roi selection
 - Currently it is working with mp4 and xvid codecs and tested with .mp4 and .avi files 
 - Double click to select roi corners
+- If output name is not given, the program picks default name for output video to avoid overriding the original data
