@@ -20,16 +20,19 @@ class RoiManager:
     def getRoiSize(self):
         self.roiW, self.roiH
 
-    def setRoi(self, frame):
+    def selectRoi(self, frame):
         self.frame = frame
         while self.roiSelected is False:
-            self.selectRoi()
+            self.setRoi()
             self.previewRoi()
 
-    def selectRoi(self):
+    def setRoi(self):
         winName = 'ROI Selection'
         cv2.namedWindow(winName)  
         cv2.setMouseCallback(winName, self.roiMouseHandler)  
+
+        print("[Time Lapse Manager] You are cropping the video. Please select the roi reigon and press \"q\" to confirm")
+
         while self.roiSelected is False:
             cv2.waitKey(WINDOW_WAIT_TIME)
         cv2.destroyWindow(winName)
@@ -46,13 +49,14 @@ class RoiManager:
 
         if(event == cv2.EVENT_LBUTTONDBLCLK):  
             self.setRoiVertex()
-            print("set")
 
     def previewRoi(self):
         winName = 'ROI Preview'
         roi = self.crop(self.frame)
         cv2.namedWindow(winName)
         cv2.imshow(winName, roi)
+
+        print("[Roi Manager] You are now viewing the roi you selected. Press \"q\" to confirm or \"e\" to cancel and reselect the roi")
 
         while True:
             key = cv2.waitKey(WINDOW_WAIT_TIME)
@@ -123,6 +127,8 @@ class TimeLapseManager:
         cv2.createTrackbar("Video Position %", self.winName, 0, 100, self.handleFrameSelectionSlider)
         self.handleFrameSelectionSlider(0)
 
+        print("[Time Lapse Manager] You are selecting reference frame. Please select the frame you want with slider above and press \"q\" to confirm")
+
         while True: # q to complete
             key = cv2.waitKey(WINDOW_WAIT_TIME)
             if key == 81 or key == 113:
@@ -136,6 +142,8 @@ class TimeLapseManager:
         cv2.createTrackbar("Vid Begin", self.winName, 0, 100, self.handleTimeLapseSliderBegin)
         cv2.createTrackbar("Vid End", self.winName, 0, 100, self.handleTimeLapseSliderEnd)
         self.showTimeLapseFrames()
+
+        print("[Time Lapse Manager] You are cutting the video. Please select the first and last frames and press \"q\" to confirm")
 
         # space to confirm lapses
         while True: # q to complete
@@ -173,8 +181,9 @@ class ArgManager:
         self.inputVid = argv[1]
         self.outVid = argv[-1]
 
-        # if output and input names are the same we change output name 
-        # to avoid overiding the original video
+        # if output and input names are the same or user is not specified any output name
+        # we set default name for output to avoid overiding the original video and errors
+        # default name = {original_name}-cropped.{format}
         if self.inputVid == self.outVid:
             self.outVid  = self.outVid.split(".")[0] + "-cropped." + self.outVid.split(".")[1]
 
@@ -211,7 +220,7 @@ def main():
             cap.set(1,0)
             _, refFrame = cap.read()
         rm.selectRoi(refFrame)
-        frameSize = rm.getCropSize()
+        frameSize = rm.getRoiSize()
     else:
         # get default size if not cropping
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -219,25 +228,34 @@ def main():
         frameSize = (w, h)
 
     if am.cut:
-        tm.selectTimeLapses(am.outVid, cap.get(cv2.CAP_PROP_FPS), frameSize)
+        tm.selectTimeLapses()
 
+    writer = generateWriter(am.outVid, cap.get(cv2.CAP_PROP_FPS), frameSize)
     start, end = tm.getTimeLapsePositions()
     length = end-start
     cap.set(1, start) # set capture position
-    writer = generateWriter()
+    
+    print("Processing Begins!!")
 
     # start video processing
     for i in range(start, end):
         ret, frame = cap.read()
 
+        # NOT WORKING BRUH
+        #per = (i/length)*100
         # print percentage in each 10% per because printing is costy
-        if(i % 10 == 0):
-            print("Video Processing ", int((i/length)*100), "%")
+        #if(per % 10 == 0):
+        #    print("Video Processing ", per, "%")
 
         if ret is False:
             break
         
-        writer.write(rm.crop(frame))
+        f = rm.crop(frame)
+        cv2.imshow("f", f)
+
+        writer.write(f)
+
+    print("Process Done!!")
 
     cap.release()
     writer.release()
