@@ -29,6 +29,7 @@ python cropper.py example.mp4 -crop -cut -fs output.mp4
 After that you can follow command line instructions of the program
 
 #### Notes
+- While selecting roi rectange. You need to select the <b>upper-left corner first then select the bottom right corner</b>
 - If you dont give -fs argument the first frame of the video is going to be used as reference frame for roi selection
 - Currently it is working with mp4 and xvid codecs and tested with .mp4 and .avi files 
 - Double click to select roi corners
