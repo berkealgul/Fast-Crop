@@ -1,7 +1,10 @@
+from sys import argv
 import cv2
 import numpy as np
 
+
 WINDOW_WAIT_TIME = 20 # ms
+
 
 class RoiManager:
     def __init__(self):
@@ -64,7 +67,10 @@ class RoiManager:
         cv2.destroyWindow(winName)
 
     def crop(self, frame):
-        return frame[self.roiY:self.roiY+self.roiH, self.roiX:self.roiX+self.roiW]  
+        if self.roiX == -1: # if user dosent select roi, return the original frame
+            return frame 
+        else:
+            return frame[self.roiY:self.roiY+self.roiH, self.roiX:self.roiX+self.roiW]  
 
     def setRoiVertex(self):
         if self.roiX == -1: # set upper left vertex
@@ -85,6 +91,7 @@ class TimeLapseManager:
         self.winName = "TimeLapseManager"
         _ , self.videoBeginFrame = cap.read()
         _ , self.videoEndFrame = cap.read()
+        #self.cap.set(1, self.videoBeginPos) # cap position is not zero it might need to be reset
 
     def handleFrameSelectionSlider(self, value):
         # slide values are % based hence we gotta calculate the position
@@ -157,45 +164,78 @@ class TimeLapseManager:
         return cv2.resize(frame, dim, interpolation = cv2.INTER_AREA)
 
 
-def main():
-    cap = cv2.VideoCapture("example.mp4")
+class ArgManager:
+    def __init__(self):
+        # getting parameters from command-line arguments
+        self.inputVid = argv[1]
+        self.outVid = argv[-1]
+
+        # if output and input names are the same we change output name 
+        # to avoid overiding the original video
+        if self.inputVid == self.outVid:
+            self.outVid  = self.outVid.split(".")[0] + "-cropped." + self.outVid.split(".")[1]
+
+        # crop and cutting are default stages if user 
+        # dosent enter any parameters
+        self.crop = True # size cropping
+        self.cut = True  # time cutting
+        self.selectFrame = True
+
+        if argv.count("-crop") == 0: 
+            self.crop = False
+        if argv.count("-cut") == 0:
+            self.cut = False
+        if argv.count("-fs") == 0:
+            self.selectFrame = False
+
+
+# returns opencv capturer and writers
+def generateCapturerAndWriter(videoPath, outputPath):
+    cap = cv2.VideoCapture(videoPath)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    #writer = cv2.VideoWriter('outpy.mp4', fourcc, fps, (w,h)) 
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v') # we gotta generate fourcc depending of output format
+    writer = cv2.VideoWriter(outputPath, fourcc, fps, (w,h)) 
+    return cap, writer
 
-
-    length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    n = 0
-
-    ret, frame = cap.read()
-    #frame = TimeLapseManager(cap).selectFrameFromVideo()
-    #rs = RoiManager()
-    #rs.setRoi(frame)
+def main():
+    am = ArgManager()
+    rm = RoiManager()
+    cap = cv2.VideoCapture(am.inputVid)
     tm = TimeLapseManager(cap)
-    tm.selectTimeLapses()
-    print(tm.getTimeLapsePositions())
 
-    cv2.imshow("new frame", frame)
+    if am.crop:
+        if am.selectFrame:
+            refFrame = tm.selectFrameFromVideo()
+        else: # get first frame
+            cap.set(1,0)
+            _, refFrame = cap.read()
+        rm.selectRoi(refFrame)
 
-    # it will be changed
-    return
+    if am.cut:
+        tm.selectTimeLapses()
 
-    while True:
+    start, end = tm.getTimeLapsePositions()
+    length = end-start
+    cap.set(1, start) # set capture position
 
+    # start video processing
+    for i in range(start, end):
         ret, frame = cap.read()
-        
-        n+=1
-        
-        print("%", (n/length)*100)
+
+        # print percentage in each 10% per because printing is costy
+        if(i % 10 == 0):
+            print("Video Processing ", int((i/length)*100), "%")
 
         if ret is False:
             break
         
-        writer.write(rs.crop(frame))
+        writer.write(rm.crop(frame))
 
-    writer.release()
     cap.release()
-
+    writer.release()
+    
 
 if __name__ == "__main__":
     main()
