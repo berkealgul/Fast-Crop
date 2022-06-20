@@ -207,14 +207,28 @@ class ArgManager:
 
 # returns opencv capturer and writers
 def generateWriter(outputPath, fps, size):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v') # we gotta generate fourcc depending of output format
+    fourcc = generateFourcc(outputPath.split(".")[1]) # we gotta generate fourcc depending of output format
     writer = cv2.VideoWriter(outputPath, fourcc, fps, size) 
     return writer
+
+def generateFourcc(format):
+    if format == "mp4":
+        return cv2.VideoWriter_fourcc(*'mp4v')
+    elif format == "avi":
+        return cv2.VideoWriter_fourcc(*'XVID')
+    else:
+        cv2.VideoWriter_fourcc(*'XVID') # at least some default option
+    
+def generateCapturer(inputPath):
+    cap = cv2.VideoCapture(inputPath)
+    if cap.isOpened() is False:
+        raise NameError("Video is not opened. Be sure video file is at the same location as the code")
+    return cap
 
 def main():
     am = ArgManager()
     rm = RoiManager()
-    cap = cv2.VideoCapture(am.inputVid)
+    cap = generateCapturer(am.inputVid)
     tm = TimeLapseManager(cap)
 
     if am.crop:
