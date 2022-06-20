@@ -18,7 +18,7 @@ class RoiManager:
         self.frame = None
 
     def getRoiSize(self):
-        self.roiW, self.roiH
+        return self.roiW, self.roiH
 
     def selectRoi(self, frame):
         self.frame = frame
@@ -31,7 +31,7 @@ class RoiManager:
         cv2.namedWindow(winName)  
         cv2.setMouseCallback(winName, self.roiMouseHandler)  
 
-        print("[Time Lapse Manager] You are cropping the video. Please select the roi reigon and press \"q\" to confirm")
+        print("[Roi Manager] You are selecting the roi you selected. Double click your mouse left button to set upper left and lower right of you roi rectangle")
 
         while self.roiSelected is False:
             cv2.waitKey(WINDOW_WAIT_TIME)
@@ -181,10 +181,14 @@ class ArgManager:
         self.inputVid = argv[1]
         self.outVid = argv[-1]
 
+        # dont confuse name with arguments
+        if self.outVid.count("-") != 0:
+            self.outVid = self.inputVid
+
         # if output and input names are the same or user is not specified any output name
-        # we set default name for output to avoid overiding the original video and errors
+        # we set default name for output to avoid overiding the original video
         # default name = {original_name}-cropped.{format}
-        if self.inputVid == self.outVid:
+        if self.inputVid == self.outVid: 
             self.outVid  = self.outVid.split(".")[0] + "-cropped." + self.outVid.split(".")[1]
 
         # crop and cutting are default stages if user 
@@ -234,7 +238,7 @@ def main():
     start, end = tm.getTimeLapsePositions()
     length = end-start
     cap.set(1, start) # set capture position
-    
+
     print("Processing Begins!!")
 
     # start video processing
@@ -251,7 +255,6 @@ def main():
             break
         
         f = rm.crop(frame)
-        cv2.imshow("f", f)
 
         writer.write(f)
 
