@@ -3,11 +3,11 @@
 This tool is for cropping and cutting videos
 
 ## Features
-- Crop: you can extract roi of video  
+- Crop: you can extract roi of video  s
 <img src="/doc/roi.png" alt="olcft" width="500">
-- Cut: you can cut videos to process only some portion of the video
+- Cut: you can cut videos to process only some portion of the videos
 <img src="/doc/cut.png" alt="olcft" width="500">
-- Reference frame: Select reference frame of roi selection
+- Reference frame: Select reference frame for roi selection
 <img src="/doc/fs.png" alt="olcft" width="500">
 
 ## How to use
