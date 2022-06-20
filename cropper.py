@@ -17,6 +17,9 @@ class RoiManager:
         self.roiSelected = False
         self.frame = None
 
+    def getRoiSize(self):
+        self.roiW, self.roiH
+
     def setRoi(self, frame):
         self.frame = frame
         while self.roiSelected is False:
@@ -190,14 +193,10 @@ class ArgManager:
 
 
 # returns opencv capturer and writers
-def generateCapturerAndWriter(videoPath, outputPath):
-    cap = cv2.VideoCapture(videoPath)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  
-    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+def generateWriter(outputPath, fps, size):
     fourcc = cv2.VideoWriter_fourcc(*'mp4v') # we gotta generate fourcc depending of output format
-    writer = cv2.VideoWriter(outputPath, fourcc, fps, (w,h)) 
-    return cap, writer
+    writer = cv2.VideoWriter(outputPath, fourcc, fps, size) 
+    return writer
 
 def main():
     am = ArgManager()
@@ -212,13 +211,20 @@ def main():
             cap.set(1,0)
             _, refFrame = cap.read()
         rm.selectRoi(refFrame)
+        frameSize = rm.getCropSize()
+    else:
+        # get default size if not cropping
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        frameSize = (w, h)
 
     if am.cut:
-        tm.selectTimeLapses()
+        tm.selectTimeLapses(am.outVid, cap.get(cv2.CAP_PROP_FPS), frameSize)
 
     start, end = tm.getTimeLapsePositions()
     length = end-start
     cap.set(1, start) # set capture position
+    writer = generateWriter()
 
     # start video processing
     for i in range(start, end):
