@@ -1,4 +1,4 @@
-# Video-Cropper
+# Fast-Crop
 
 This tool is for cropping and cutting videos
 
