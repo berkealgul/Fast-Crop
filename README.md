@@ -1,6 +1,6 @@
 # Fast-Crop
 
-This tool is for cropping and cutting videos
+A minimal tool to extract roi(reigon of interest) from videos.
 
 ## Features
 - Crop: you can extract roi of videos
