@@ -16,8 +16,8 @@ First you need to run the cropper.py code with arguments
 
 | Argument      | Description   | 
 | ------------- |:-------------:| 
-| (first argument) videoName.format        | Name of input video             |
-| (optional last argument) videoName.format| Name of output video            |
+| (first argument) video-name.format        | Name of input video             |
+| (optional last argument) video-name.format| Name of output video            |
 | (optional)  -crop                        | Enable crop feature             |
 | (optional)  -cut                         | Enable cut feature              |  
 | (optional)  -fs                          | Select reference frame manually for roi selection | 
