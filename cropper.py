@@ -212,12 +212,13 @@ def generateWriter(outputPath, fps, size):
     return writer
 
 def generateFourcc(format):
+    print(format)
     if format == "mp4":
         return cv2.VideoWriter_fourcc(*'mp4v')
     elif format == "avi":
         return cv2.VideoWriter_fourcc(*'XVID')
     else:
-        cv2.VideoWriter_fourcc(*'XVID') # at least some default option
+        return cv2.VideoWriter_fourcc(*'XVID') # at least some default option
     
 def generateCapturer(inputPath):
     cap = cv2.VideoCapture(inputPath)
